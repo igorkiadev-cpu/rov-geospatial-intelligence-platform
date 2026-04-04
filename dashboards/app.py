@@ -4,20 +4,20 @@ import plotly.express as px
 import sys
 import os
 
-# Corrige import do src no Streamlit Cloud
+# Import fix
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.geospatial_analysis import load_data
 
 # -------------------------------
-# CONFIG PAGE
+# PAGE CONFIG
 # -------------------------------
 st.set_page_config(page_title="ROV Mission Intelligence", layout="wide")
 
 st.title("🌊 ROV Mission Intelligence Platform")
-st.markdown("Transforming ROV telemetry into subsea insights")
+st.markdown("Advanced subsea mission visualization & analytics")
 
 # -------------------------------
-# FILE UPLOAD
+# UPLOAD
 # -------------------------------
 uploaded_file = st.file_uploader("Upload ROV CSV", type=["csv"])
 
@@ -30,34 +30,43 @@ if uploaded_file:
     df.columns = df.columns.str.strip().str.lower()
 
     required_columns = {"latitude", "longitude", "depth"}
-
     if not required_columns.issubset(df.columns):
         st.error("CSV must contain: latitude, longitude, depth")
         st.stop()
 
-    # Convert + clean
+    # Optional timestamp (pra replay)
+    has_time = "timestamp" in df.columns
+
+    # Convert data
     for col in ["latitude", "longitude", "depth"]:
         df[col] = df[col].astype(str).str.strip()
         df[col] = df[col].str.replace(",", ".", regex=False)
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
+    if has_time:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+
     df = df.dropna(subset=["latitude", "longitude", "depth"])
 
-    # -------------------------------
-    # PERFORMANCE (BIG DATA SAFE)
-    # -------------------------------
-    if len(df) > 5000:
-        df = df.sample(5000)
+    # Ordena por tempo (importante pro replay)
+    if has_time:
+        df = df.sort_values("timestamp")
 
     # -------------------------------
-    # SIDEBAR FILTERS
+    # PERFORMANCE
     # -------------------------------
-    st.sidebar.header("Filters")
+    if len(df) > 8000:
+        df = df.sample(8000)
+
+    # -------------------------------
+    # SIDEBAR
+    # -------------------------------
+    st.sidebar.header("Mission Controls")
 
     min_depth, max_depth = float(df["depth"].min()), float(df["depth"].max())
 
     depth_range = st.sidebar.slider(
-        "Depth Range",
+        "Depth Filter",
         min_value=min_depth,
         max_value=max_depth,
         value=(min_depth, max_depth)
@@ -68,18 +77,28 @@ if uploaded_file:
     # -------------------------------
     # KPIs
     # -------------------------------
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
 
-    col1.metric("Total Points", len(df))
-    col2.metric("Max Depth", f"{df['depth'].max():.2f}")
-    col3.metric("Min Depth", f"{df['depth'].min():.2f}")
+    col1.metric("Data Points", len(df))
+    col2.metric("Max Depth", f"{df['depth'].max():.1f}")
+    col3.metric("Min Depth", f"{df['depth'].min():.1f}")
+
+    if has_time:
+        duration = (df["timestamp"].max() - df["timestamp"].min()).total_seconds() / 60
+        col4.metric("Mission Duration (min)", f"{duration:.1f}")
+    else:
+        col4.metric("Mission Duration", "N/A")
 
     st.markdown("---")
 
     # -------------------------------
-    # VIEW SELECTOR
+    # VIEW MODE
     # -------------------------------
-    view = st.radio("Select Visualization", ["2D Map", "3D Subsea View"], horizontal=True)
+    view = st.radio(
+        "Select Mode",
+        ["2D Map", "3D View", "Trajectory", "Mission Replay"],
+        horizontal=True
+    )
 
     # -------------------------------
     # 2D MAP
@@ -96,15 +115,12 @@ if uploaded_file:
             hover_data=["depth"]
         )
 
-        fig.update_layout(
-            mapbox_style="open-street-map",
-            margin=dict(l=0, r=0, t=0, b=0)
-        )
+        fig.update_layout(mapbox_style="open-street-map")
 
     # -------------------------------
     # 3D VIEW
     # -------------------------------
-    else:
+    elif view == "3D View":
         df["depth_visual"] = -df["depth"]
 
         fig = px.scatter_3d(
@@ -119,22 +135,61 @@ if uploaded_file:
 
         fig.update_traces(marker=dict(size=3))
 
-        fig.update_layout(
-            scene=dict(
-                xaxis_title="Longitude",
-                yaxis_title="Latitude",
-                zaxis_title="Depth"
-            ),
-            margin=dict(l=0, r=0, t=0, b=0)
-        )
+    # -------------------------------
+    # TRAJECTORY (PATH)
+    # -------------------------------
+    elif view == "Trajectory":
+
+        if has_time:
+            fig = px.line_mapbox(
+                df,
+                lat="latitude",
+                lon="longitude",
+                color="depth",
+                zoom=5,
+                height=600
+            )
+        else:
+            fig = px.line_mapbox(
+                df.reset_index(),
+                lat="latitude",
+                lon="longitude",
+                zoom=5,
+                height=600
+            )
+
+        fig.update_layout(mapbox_style="open-street-map")
 
     # -------------------------------
-    # SHOW CHART
+    # REPLAY (ANIMATION)
+    # -------------------------------
+    else:
+        if not has_time:
+            st.warning("Replay requires a 'timestamp' column")
+            st.stop()
+
+        # Reduz granularidade (performance)
+        df["time_group"] = df["timestamp"].dt.floor("10s")
+
+        fig = px.scatter_mapbox(
+            df,
+            lat="latitude",
+            lon="longitude",
+            color="depth",
+            animation_frame="time_group",
+            zoom=5,
+            height=600
+        )
+
+        fig.update_layout(mapbox_style="open-street-map")
+
+    # -------------------------------
+    # SHOW
     # -------------------------------
     st.plotly_chart(fig, use_container_width=True)
 
     # -------------------------------
     # DATA PREVIEW
     # -------------------------------
-    with st.expander("View Raw Data"):
-        st.dataframe(df.head(100))
+    with st.expander("Raw Data"):
+        st.dataframe(df.head(200))

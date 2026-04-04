@@ -1,11 +1,14 @@
 import streamlit as st
+import sys
 import os
+
+# 🔥 ESSA LINHA RESOLVE
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.data_loader import load_data
 from src.data_processing import clean_data
-from src.analytics import detect_anomalies, compare_missions
+from src.analytics import detect_anomalies
 from src.visualization import map_2d, map_3d, anomalies_map, bathymetry_map
-
 st.set_page_config(page_title="ROV Mission Intelligence", layout="wide")
 
 st.title("🌊 ROV Mission Intelligence Platform")

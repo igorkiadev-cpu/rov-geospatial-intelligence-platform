@@ -8,20 +8,16 @@ uploaded_file = st.file_uploader("Upload ROV CSV", type=["csv"])
 
 if uploaded_file is not None:
     try:
-        # 🔥 leitura FORÇADA correta
         content = uploaded_file.getvalue().decode("utf-8")
 
-        # DEBUG
         st.write("Preview bruto do arquivo:")
         st.text(content[:200])
 
-        # lê dataframe
-        df = pd.read_csv(io.StringIO(content), sep=None, engine='python')
+        # 🔥 CORREÇÃO AQUI
+        df = pd.read_csv(io.StringIO(content), sep=",")
 
-        # DEBUG COLUNAS
         st.write("Colunas detectadas:", df.columns.tolist())
 
-        # normalização
         df.columns = df.columns.str.strip().str.lower()
 
         required_columns = ['latitude', 'longitude', 'depth']

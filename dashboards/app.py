@@ -1,14 +1,16 @@
 import streamlit as st
 import sys
 import os
+import pandas as pd
 
-# 🔥 ESSA LINHA RESOLVE
+# 🔥 path fix
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.data_loader import load_data
 from src.data_processing import clean_data
 from src.analytics import detect_anomalies
 from src.visualization import map_2d, map_3d, anomalies_map, bathymetry_map
+
 st.set_page_config(page_title="ROV Mission Intelligence", layout="wide")
 
 st.title("🌊 ROV Mission Intelligence Platform")
@@ -37,32 +39,52 @@ if not st.session_state.logged_in:
 uploaded_file = st.file_uploader("Upload CSV", type=["csv"])
 
 if uploaded_file:
-    df = load_data(uploaded_file)
-    df = clean_data(df)
-    df = detect_anomalies(df)
+    try:
+        df = load_data(uploaded_file)
 
-    # KPIs
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Points", len(df))
-    col2.metric("Max Depth", f"{df['depth'].max():.1f}")
-    col3.metric("Min Depth", f"{df['depth'].min():.1f}")
+        # DEBUG (remove depois se quiser)
+        st.write("Columns detected:", df.columns)
 
-    view = st.radio(
-        "Mode",
-        ["2D Map", "3D View", "Anomalies", "Bathymetry"],
-        horizontal=True
-    )
+        df = clean_data(df)
+        df = detect_anomalies(df)
 
-    if view == "2D Map":
-        fig = map_2d(df)
+        # validação essencial
+        required_cols = ["latitude", "longitude", "depth"]
+        for col in required_cols:
+            if col not in df.columns:
+                st.error(f"Missing required column: {col}")
+                st.stop()
 
-    elif view == "3D View":
-        fig = map_3d(df)
+        # converter depth para número (evita erro)
+        df["depth"] = pd.to_numeric(df["depth"], errors="coerce")
 
-    elif view == "Anomalies":
-        fig = anomalies_map(df)
+        # KPIs
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Points", len(df))
+        col2.metric("Max Depth", f"{df['depth'].max():.1f}")
+        col3.metric("Min Depth", f"{df['depth'].min():.1f}")
 
-    else:
-        fig = bathymetry_map(df)
+        # seleção de modo
+        view = st.radio(
+            "Mode",
+            ["2D Map", "3D View", "Anomalies", "Bathymetry"],
+            horizontal=True
+        )
 
-    st.plotly_chart(fig, use_container_width=True)
+        # renderização
+        if view == "2D Map":
+            fig = map_2d(df)
+
+        elif view == "3D View":
+            fig = map_3d(df)
+
+        elif view == "Anomalies":
+            fig = anomalies_map(df)
+
+        else:
+            fig = bathymetry_map(df)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Error processing file: {e}")

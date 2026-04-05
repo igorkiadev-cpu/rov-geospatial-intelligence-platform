@@ -10,10 +10,13 @@ if uploaded_file is not None:
     try:
         content = uploaded_file.getvalue().decode("utf-8")
 
-        st.write("Preview bruto do arquivo:")
+        # 🔥 REMOVE ASPAS QUEBRADAS DO ARQUIVO
+        content = content.replace('"', '')
+
+        st.write("Preview corrigido:")
         st.text(content[:200])
 
-        # 🔥 CORREÇÃO AQUI
+        # agora sim lê corretamente
         df = pd.read_csv(io.StringIO(content), sep=",")
 
         st.write("Colunas detectadas:", df.columns.tolist())

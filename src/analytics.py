@@ -1,18 +1,24 @@
-import pandas as pd
+import numpy as np
 
-# 🔴 Anomaly detection
-def detect_anomalies(df, threshold=2.5):
-    df["depth_zscore"] = (df["depth"] - df["depth"].mean()) / df["depth"].std()
-    df["anomaly"] = df["depth_zscore"].abs() > threshold
+def detect_anomalies(df):
+    df = df.copy()
+
+    # variação de profundidade
+    df["depth_diff"] = df["depth"].diff().abs()
+
+    # velocidade horizontal (aproximada)
+    df["lat_diff"] = df["latitude"].diff().abs()
+    df["lon_diff"] = df["longitude"].diff().abs()
+    df["movement"] = np.sqrt(df["lat_diff"]**2 + df["lon_diff"]**2)
+
+    # thresholds (ajustáveis)
+    depth_threshold = df["depth_diff"].mean() + 2 * df["depth_diff"].std()
+    movement_threshold = df["movement"].mean() + 2 * df["movement"].std()
+
+    # regras de anomalia
+    df["anomaly"] = (
+        (df["depth_diff"] > depth_threshold) |
+        (df["movement"] > movement_threshold)
+    )
+
     return df
-
-# 📊 Comparação de missões
-def compare_missions(dfs):
-    df_all = pd.concat(dfs)
-
-    summary = df_all.groupby("mission").agg({
-        "depth": ["max", "min", "mean"],
-        "latitude": "count"
-    }).reset_index()
-
-    return df_all, summary

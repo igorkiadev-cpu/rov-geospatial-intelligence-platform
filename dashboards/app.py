@@ -6,12 +6,12 @@ import numpy as np
 
 st.set_page_config(layout="wide")
 
-st.title("🌌 ROV Mission Intelligence Platform - Advanced")
+st.title("🌊 ROV Mission Intelligence Platform")
 
 uploaded_file = st.file_uploader("Upload ROV CSV", type=["csv"])
 
 # =========================
-# 📌 DISTÂNCIA REAL (HAVERSINE)
+# 📌 DISTÂNCIA HAVERSINE
 # =========================
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
@@ -19,52 +19,51 @@ def haversine(lat1, lon1, lat2, lon2):
     dlon = np.radians(lon2 - lon1)
 
     a = np.sin(dlat/2)**2 + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon/2)**2
-    c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
-    return R * c
+    return 2 * R * np.arctan2(np.sqrt(a), np.sqrt(1-a))
 
 def total_distance(df):
-    dist = 0
-    for i in range(len(df)-1):
-        dist += haversine(
-            df.iloc[i]["latitude"], df.iloc[i]["longitude"],
-            df.iloc[i+1]["latitude"], df.iloc[i+1]["longitude"]
-        )
-    return dist
+    lat = df["latitude"].values
+    lon = df["longitude"].values
+
+    return np.sum(haversine(lat[:-1], lon[:-1], lat[1:], lon[1:]))
 
 # =========================
 # 🚀 PROCESSAMENTO
 # =========================
 if uploaded_file is not None:
-    with st.spinner("Processando missão..."):
-        content = uploaded_file.getvalue().decode("utf-8")
-        content = content.replace('"', '')
 
-        df = pd.read_csv(io.StringIO(content))
-        df.columns = df.columns.str.strip().str.lower()
+    with st.spinner("Processing mission data..."):
 
-        required = ['latitude', 'longitude', 'depth']
-        missing = [c for c in required if c not in df.columns]
+        try:
+            content = uploaded_file.getvalue().decode("utf-8")
+            content = content.replace('"', '')
 
-        if missing:
-            st.error(f"Missing columns: {missing}")
-        else:
-            st.success("Missão carregada!")
+            df = pd.read_csv(io.StringIO(content))
+            df.columns = df.columns.str.strip().str.lower()
+
+            required = ['latitude', 'longitude', 'depth']
+            missing = [c for c in required if c not in df.columns]
+
+            if missing:
+                st.error(f"Missing required columns: {missing}")
+                st.stop()
 
             # =========================
-            # ⏱️ TIMESTAMP
+            # ⏱️ TIMESTAMP (SAFE)
             # =========================
             if "timestamp" in df.columns:
-                df["timestamp"] = pd.to_datetime(df["timestamp"])
+                df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+                df = df.sort_values("timestamp")
             else:
                 df["timestamp"] = range(len(df))
 
             # =========================
-            # 🧠 ANOMALIA AVANÇADA
+            # 🧠 ANOMALIA ROBUSTA
             # =========================
-            df["rolling_mean"] = df["depth"].rolling(5).mean()
-            df["rolling_std"] = df["depth"].rolling(5).std()
+            rolling_mean = df["depth"].rolling(10, min_periods=1).mean()
+            rolling_std = df["depth"].rolling(10, min_periods=1).std().fillna(0)
 
-            df["anomaly"] = abs(df["depth"] - df["rolling_mean"]) > 2 * df["rolling_std"]
+            df["anomaly"] = (abs(df["depth"] - rolling_mean) > 2 * rolling_std)
 
             # =========================
             # 📊 KPIs
@@ -79,32 +78,46 @@ if uploaded_file is not None:
             st.divider()
 
             # =========================
-            # 🎛️ CONTROLE
+            # 🎛️ VISUALIZAÇÃO (DEFAULT OK)
             # =========================
             view = st.selectbox(
-                "Mode",
-                ["Replay Mission", "3D Terrain", "Heatmap", "Anomaly Detection", "Time Series"]
+                "Visualization Mode",
+                ["Map 2D", "Route", "3D View", "Anomalies", "Time Series"]
             )
 
             # =========================
-            # 🎥 REPLAY AUTOMÁTICO
+            # 🗺️ MAPA 2D
             # =========================
-            if view == "Replay Mission":
-                fig = px.line_mapbox(
+            if view == "Map 2D":
+                fig = px.scatter_mapbox(
                     df,
                     lat="latitude",
                     lon="longitude",
-                    animation_frame=df.index,
-                    zoom=5,
+                    color="depth",
+                    zoom=6,
                     height=600
                 )
                 fig.update_layout(mapbox_style="open-street-map")
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 🌐 3D TERRAIN
+            # 🧭 ROTA
             # =========================
-            elif view == "3D Terrain":
+            elif view == "Route":
+                fig = px.line_mapbox(
+                    df,
+                    lat="latitude",
+                    lon="longitude",
+                    zoom=6,
+                    height=600
+                )
+                fig.update_layout(mapbox_style="open-street-map")
+                st.plotly_chart(fig, use_container_width=True)
+
+            # =========================
+            # 🌐 3D
+            # =========================
+            elif view == "3D View":
                 fig = px.scatter_3d(
                     df,
                     x="longitude",
@@ -115,31 +128,15 @@ if uploaded_file is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 🔥 HEATMAP
-            # =========================
-            elif view == "Heatmap":
-                fig = px.density_mapbox(
-                    df,
-                    lat="latitude",
-                    lon="longitude",
-                    z="depth",
-                    radius=10,
-                    zoom=5,
-                    height=600
-                )
-                fig.update_layout(mapbox_style="open-street-map")
-                st.plotly_chart(fig, use_container_width=True)
-
-            # =========================
             # 🔴 ANOMALIAS
             # =========================
-            elif view == "Anomaly Detection":
+            elif view == "Anomalies":
                 fig = px.scatter_mapbox(
                     df,
                     lat="latitude",
                     lon="longitude",
                     color="anomaly",
-                    zoom=5,
+                    zoom=6,
                     height=600
                 )
                 fig.update_layout(mapbox_style="open-street-map")
@@ -157,5 +154,11 @@ if uploaded_file is not None:
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-            with st.expander("Full dataset"):
+            # =========================
+            # 📋 DADOS
+            # =========================
+            with st.expander("Show raw data"):
                 st.dataframe(df)
+
+        except Exception as e:
+            st.error(f"Error processing file: {e}")

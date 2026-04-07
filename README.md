@@ -1,4 +1,4 @@
- # 🌊 ROV Mission Intelligence Platform (RMIP)
+# 🌊 Geospatial Intelligence Platform (GIP)
 
 Geospatial analytics platform for ROV missions, enabling trajectory analysis, coverage mapping, and actionable subsea operational insights.
 
@@ -18,7 +18,7 @@ Geospatial analytics platform for ROV missions, enabling trajectory analysis, co
 
 ## 🧠 Overview
 
-The **ROV Mission Intelligence Platform (RMIP)** is designed to process and visualize telemetry data from Remotely Operated Vehicles (ROVs), transforming raw mission data into meaningful engineering insights.
+The **Geospatial Intelligence Platform (GIP)** is designed to process and visualize telemetry data from Remotely Operated Vehicles (ROVs), transforming raw mission data into meaningful engineering insights.
 
 It supports offshore operations by enabling better decision-making through geospatial analysis, anomaly detection, and mission performance evaluation.
 
@@ -72,7 +72,7 @@ latitude,longitude,depth,timestamp
 
 ## 📸 Demo
 
-![ROV Demo](./(rov-demo.gif)
+![GIP Demo](./rov-demo.gif)
 
 ---
 

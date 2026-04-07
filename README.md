@@ -72,7 +72,7 @@ latitude,longitude,depth,timestamp
 
 ## 📸 Demo
 
-![ROV Demo](./(.GIF_ROV Mission Intelligence Platform.mov)
+![ROV Demo](./(rov-demo.gif)
 
 ---
 

@@ -72,7 +72,11 @@ latitude,longitude,depth,timestamp
 
 ## 📸 Demo
 
-![GIP Demo](./rov-demo.gif)
+## 🎥 Platform Demo
+
+<p align="center">
+  <img src="./rov-demo.gif-1.gif" width="700">
+</p>
 
 ---
 

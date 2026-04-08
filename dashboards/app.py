@@ -24,7 +24,6 @@ def haversine(lat1, lon1, lat2, lon2):
 def total_distance(df):
     lat = df["latitude"].values
     lon = df["longitude"].values
-
     return np.sum(haversine(lat[:-1], lon[:-1], lat[1:], lon[1:]))
 
 # =========================
@@ -49,7 +48,7 @@ if uploaded_file is not None:
                 st.stop()
 
             # =========================
-            # ⏱️ TIMESTAMP (SAFE)
+            # ⏱️ TIMESTAMP
             # =========================
             if "timestamp" in df.columns:
                 df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
@@ -58,12 +57,20 @@ if uploaded_file is not None:
                 df["timestamp"] = range(len(df))
 
             # =========================
-            # 🧠 ANOMALIA ROBUSTA
+            # 🧠 ANOMALIA AVANÇADA
             # =========================
             rolling_mean = df["depth"].rolling(10, min_periods=1).mean()
             rolling_std = df["depth"].rolling(10, min_periods=1).std().fillna(0)
 
-            df["anomaly"] = (abs(df["depth"] - rolling_mean) > 2 * rolling_std)
+            # desvio clássico (mais sensível)
+            anomaly_std = abs(df["depth"] - rolling_mean) > (1.2 * rolling_std)
+
+            # variação brusca (mudança rápida de depth)
+            gradient = df["depth"].diff().abs()
+            anomaly_gradient = gradient > gradient.mean() * 1.5
+
+            # combinação final
+            df["anomaly"] = anomaly_std | anomaly_gradient
 
             # =========================
             # 📊 KPIs
@@ -78,7 +85,7 @@ if uploaded_file is not None:
             st.divider()
 
             # =========================
-            # 🎛️ VISUALIZAÇÃO (DEFAULT OK)
+            # 🎛️ VISUALIZAÇÃO
             # =========================
             view = st.selectbox(
                 "Visualization Mode",
@@ -101,7 +108,7 @@ if uploaded_file is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 🧭 ROTA
+            # 🧭 ROTA + ANOMALIAS
             # =========================
             elif view == "Route":
                 fig = px.line_mapbox(
@@ -111,6 +118,19 @@ if uploaded_file is not None:
                     zoom=6,
                     height=600
                 )
+
+                anomalies_df = df[df["anomaly"]]
+
+                fig.add_scattermapbox(
+                    lat=anomalies_df["latitude"],
+                    lon=anomalies_df["longitude"],
+                    mode="markers",
+                    marker=dict(size=14, color="red"),
+                    name="Anomalies",
+                    hovertext=anomalies_df["depth"],
+                    hoverinfo="text"
+                )
+
                 fig.update_layout(mapbox_style="open-street-map")
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -155,8 +175,10 @@ if uploaded_file is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 📋 DADOS
+            # 📋 DEBUG (pode remover depois)
             # =========================
+            st.write("Total anomalies detected:", df["anomaly"].sum())
+
             with st.expander("Show raw data"):
                 st.dataframe(df)
 

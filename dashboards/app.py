@@ -76,6 +76,28 @@ if uploaded_file is not None:
             df["intensity"] = abs(df["depth"] - rolling_mean)
 
             # =========================
+            # 🔥 SEVERITY
+            # =========================
+            def classify_severity(x):
+                if x > df["intensity"].quantile(0.9):
+                    return "High"
+                elif x > df["intensity"].quantile(0.7):
+                    return "Medium"
+                else:
+                    return "Low"
+
+            df["severity"] = df["intensity"].apply(classify_severity)
+
+            # =========================
+            # 🔥 CLUSTER (ZONA CRÍTICA)
+            # =========================
+            df["cluster"] = (df["anomaly"] != df["anomaly"].shift()).cumsum()
+            cluster_sizes = df[df["anomaly"]].groupby("cluster").size()
+
+            valid_clusters = cluster_sizes[cluster_sizes >= 3].index
+            df["critical_zone"] = df["cluster"].isin(valid_clusters)
+
+            # =========================
             # 📊 KPIs
             # =========================
             c1, c2, c3, c4 = st.columns(4)
@@ -92,7 +114,7 @@ if uploaded_file is not None:
             # =========================
             view = st.selectbox(
                 "Visualization Mode",
-                ["Map 2D", "Route", "3D View", "Anomalies", "Time Series"]
+                ["Map 2D", "Route", "3D View", "Anomalies", "Time Series", "Heatmap"]
             )
 
             # =========================
@@ -111,7 +133,7 @@ if uploaded_file is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 🧭 ROTA + ANOMALIAS AVANÇADAS
+            # 🧭 ROTA COMPLETA
             # =========================
             elif view == "Route":
                 fig = px.line_mapbox(
@@ -125,12 +147,9 @@ if uploaded_file is not None:
                 anomalies_df = df[df["anomaly"]].copy()
 
                 if not anomalies_df.empty:
-
-                    # 🔥 NORMALIZA TAMANHO
                     max_int = anomalies_df["intensity"].max()
                     anomalies_df["size"] = (anomalies_df["intensity"] / max_int) * 20 + 10
 
-                    # ⚡ EFEITO PULSANTE
                     pulse = (np.sin(time.time()) + 1) * 5
                     anomalies_df["size"] += pulse
 
@@ -145,8 +164,20 @@ if uploaded_file is not None:
                             showscale=True
                         ),
                         name="Anomalies",
-                        hovertext=anomalies_df["depth"],
+                        hovertext=anomalies_df["severity"],
                         hoverinfo="text"
+                    )
+
+                # 🔵 ZONA CRÍTICA
+                critical_df = df[df["critical_zone"]]
+
+                if not critical_df.empty:
+                    fig.add_scattermapbox(
+                        lat=critical_df["latitude"],
+                        lon=critical_df["longitude"],
+                        mode="markers",
+                        marker=dict(size=6, color="blue"),
+                        name="Critical Zone"
                     )
 
                 fig.update_layout(mapbox_style="open-street-map")
@@ -174,6 +205,22 @@ if uploaded_file is not None:
                     lat="latitude",
                     lon="longitude",
                     color="anomaly",
+                    zoom=6,
+                    height=600
+                )
+                fig.update_layout(mapbox_style="open-street-map")
+                st.plotly_chart(fig, use_container_width=True)
+
+            # =========================
+            # 🌡️ HEATMAP
+            # =========================
+            elif view == "Heatmap":
+                fig = px.density_mapbox(
+                    df,
+                    lat="latitude",
+                    lon="longitude",
+                    z="intensity",
+                    radius=10,
                     zoom=6,
                     height=600
                 )

@@ -3,6 +3,7 @@ import pandas as pd
 import io
 import plotly.express as px
 import numpy as np
+import time
 
 st.set_page_config(layout="wide")
 
@@ -62,15 +63,17 @@ if uploaded_file is not None:
             rolling_mean = df["depth"].rolling(10, min_periods=1).mean()
             rolling_std = df["depth"].rolling(10, min_periods=1).std().fillna(0)
 
-            # desvio clássico (mais sensível)
             anomaly_std = abs(df["depth"] - rolling_mean) > (1.2 * rolling_std)
 
-            # variação brusca (mudança rápida de depth)
             gradient = df["depth"].diff().abs()
             anomaly_gradient = gradient > gradient.mean() * 1.5
 
-            # combinação final
             df["anomaly"] = anomaly_std | anomaly_gradient
+
+            # =========================
+            # 🔥 INTENSIDADE
+            # =========================
+            df["intensity"] = abs(df["depth"] - rolling_mean)
 
             # =========================
             # 📊 KPIs
@@ -108,7 +111,7 @@ if uploaded_file is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 🧭 ROTA + ANOMALIAS
+            # 🧭 ROTA + ANOMALIAS AVANÇADAS
             # =========================
             elif view == "Route":
                 fig = px.line_mapbox(
@@ -119,17 +122,32 @@ if uploaded_file is not None:
                     height=600
                 )
 
-                anomalies_df = df[df["anomaly"]]
+                anomalies_df = df[df["anomaly"]].copy()
 
-                fig.add_scattermapbox(
-                    lat=anomalies_df["latitude"],
-                    lon=anomalies_df["longitude"],
-                    mode="markers",
-                    marker=dict(size=14, color="red"),
-                    name="Anomalies",
-                    hovertext=anomalies_df["depth"],
-                    hoverinfo="text"
-                )
+                if not anomalies_df.empty:
+
+                    # 🔥 NORMALIZA TAMANHO
+                    max_int = anomalies_df["intensity"].max()
+                    anomalies_df["size"] = (anomalies_df["intensity"] / max_int) * 20 + 10
+
+                    # ⚡ EFEITO PULSANTE
+                    pulse = (np.sin(time.time()) + 1) * 5
+                    anomalies_df["size"] += pulse
+
+                    fig.add_scattermapbox(
+                        lat=anomalies_df["latitude"],
+                        lon=anomalies_df["longitude"],
+                        mode="markers",
+                        marker=dict(
+                            size=anomalies_df["size"],
+                            color=anomalies_df["intensity"],
+                            colorscale="Reds",
+                            showscale=True
+                        ),
+                        name="Anomalies",
+                        hovertext=anomalies_df["depth"],
+                        hoverinfo="text"
+                    )
 
                 fig.update_layout(mapbox_style="open-street-map")
                 st.plotly_chart(fig, use_container_width=True)
@@ -175,7 +193,7 @@ if uploaded_file is not None:
                 st.plotly_chart(fig, use_container_width=True)
 
             # =========================
-            # 📋 DEBUG (pode remover depois)
+            # 📋 DEBUG
             # =========================
             st.write("Total anomalies detected:", df["anomaly"].sum())
 

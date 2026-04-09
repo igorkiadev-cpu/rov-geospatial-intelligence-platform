@@ -41,7 +41,7 @@ The platform goes beyond visualization by integrating anomaly detection, traject
 
 ### 🔹 Data → Insight
 
-![Data to Insight](.data-to-insight.gif-up)
+![Data to Insight](./data-to-insight.gif-up)
 
 ---
 

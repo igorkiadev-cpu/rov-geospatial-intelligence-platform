@@ -41,19 +41,19 @@ The platform goes beyond visualization by integrating anomaly detection, traject
 
 ### 🔹 Data → Insight
 
-![Data to Insight](./data-to-insight.gif-up)
+![Data to Insight](./data-to-insight.gif.gif)
 
 ---
 
 ### 🔹 Anomaly Detection & Route Intelligence
 
-![Anomaly Detection](./gip-anomaly-detection.gif)
+![Anomaly Detection](./gip-anomaly-detection.gif.gif)
 
 ---
 
 ### 🔹 Critical Zones & Risk Heatmap
 
-![Critical Zones](./critical-zones.gif)
+![Critical Zones](./critical-zones.gif.gif)
 
 ---
 

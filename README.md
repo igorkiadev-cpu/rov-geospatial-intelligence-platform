@@ -1,6 +1,6 @@
 # 🌊 Geospatial Intelligence Platform (GIP)
 
-Geospatial analytics platform for ROV missions, enabling trajectory analysis, coverage mapping, and actionable subsea operational insights.
+Advanced geospatial analytics platform for ROV missions, transforming raw telemetry into actionable subsea engineering intelligence.
 
 ---
 
@@ -18,30 +18,52 @@ Geospatial analytics platform for ROV missions, enabling trajectory analysis, co
 
 ## 🧠 Overview
 
-The **Geospatial Intelligence Platform (GIP)** is designed to process and visualize telemetry data from Remotely Operated Vehicles (ROVs), transforming raw mission data into meaningful engineering insights.
+The **Geospatial Intelligence Platform (GIP)** processes and visualizes telemetry data from Remotely Operated Vehicles (ROVs), enabling engineers to extract operational insights from complex subsea environments.
 
-It supports offshore operations by enabling better decision-making through geospatial analysis, anomaly detection, and mission performance evaluation.
-
----
-
-## 🌍 Key Features
-
-- 🗺️ Interactive 2D geospatial visualization  
-- 🌐 3D subsea trajectory analysis  
-- 🧭 ROV route tracking  
-- 📊 Depth and time-series analysis  
-- 🧠 Automated anomaly detection  
-- 📈 Mission KPIs (distance, depth, anomalies)  
+The platform goes beyond visualization by integrating anomaly detection, trajectory analysis, and spatial intelligence to support offshore decision-making.
 
 ---
 
-## 🛠️ Tech Stack
+## 🎯 Core Capabilities
 
-- Python  
-- Pandas  
-- Plotly  
-- Streamlit  
-- NumPy  
+- 🗺️ 2D geospatial mapping of ROV missions  
+- 🌐 3D subsea trajectory visualization  
+- 🧭 Route tracking and spatial analysis  
+- 🧠 Real-time anomaly detection  
+- 🔥 Intensity-based anomaly classification  
+- 📍 Critical subsea zone identification  
+- 🌡️ Heatmap of operational risk  
+- 📊 Mission KPIs (distance, depth, anomalies)  
+
+---
+
+## 📸 Demo
+
+### 🔹 Data → Insight
+
+![Data to Insight](./gip-data-to-insight.gif)
+
+---
+
+### 🔹 Anomaly Detection & Route Intelligence
+
+![Anomaly Detection](./gip-anomaly-detection.gif)
+
+---
+
+### 🔹 Critical Zones & Risk Heatmap
+
+![Critical Zones](./critical-zones.gif)
+
+---
+
+## ⚙️ How It Works
+
+1. Upload ROV mission CSV data  
+2. Data is cleaned and standardized  
+3. Depth patterns and anomalies are detected  
+4. Spatial analysis identifies critical subsea zones  
+5. Results are visualized through interactive dashboards  
 
 ---
 
@@ -52,37 +74,40 @@ latitude,longitude,depth,timestamp
 
 ---
 
-## ⚙️ How It Works
+## 🛠️ Tech Stack
 
-1. Upload ROV CSV data  
-2. Data is cleaned and standardized  
-3. Metrics and anomalies are computed  
-4. Results are displayed through interactive dashboards  
+- Python  
+- Pandas  
+- NumPy  
+- Plotly  
+- Streamlit  
 
 ---
 
 ## 💡 Use Cases
 
-- Subsea inspection and maintenance  
+- Subsea pipeline inspection  
 - Offshore engineering analysis  
-- Mission performance monitoring  
-- Environmental data exploration  
+- ROV mission performance optimization  
+- Risk detection in subsea operations  
+- Environmental and geospatial data exploration  
 
 ---
 
-## 📸 Demo
+## 🚀 Future Improvements
 
-## 🎥 Platform Demo
-
-<p align="center">
-  <img src="./rov-demo.gif-1.gif" width="700">
-</p>
+- Automated mission report generation (PDF)  
+- Multi-mission comparison  
+- Real-time data ingestion  
+- Machine learning-based anomaly prediction  
 
 ---
 
 ## 👨‍💻 Author
 
-**Igor Carvalho**
+**Igor Carvalho**  
+
+Geospatial Data | Subsea Analytics | Offshore Intelligence  
 
 ---
 
